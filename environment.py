@@ -46,24 +46,49 @@ def _orientations(cells):
 
 @dataclass
 class ParkingSpec:
-    """Parking geometry for one vehicle type (PLACEHOLDER - match Figure 5)."""
-    slot_cells: list          # cells that must be free (the parking slot)
-    wall_cells: list          # obstacle cells flanking the slot
-    goal_pose: tuple          # (x, y, theta) of the vehicle reference point at the goal
+    """Parking geometry for one vehicle type, read off Figure 5 of the assignment.
+
+    The parking area is a 6x2-cell block in the Southeast corner (columns 6..11, rows 0..1)
+    that OVERWRITES whatever obstacles were generated there.
+    """
+    slot_cells: list          # cells in the block forced FREE (incl. the whole top row)
+    wall_cells: list          # cells in the block forced to OBSTACLE (bottom row walls)
+    goal_box: tuple           # green rectangle in Fig. 5: (xmin, ymin, xmax, ymax) [m]
+    goal_pose: tuple          # (x, y, theta) at the center of the green rectangle
     goal_tol: tuple = (0.5, 0.5, 0.15)  # (dx, dy, dtheta) tolerance, meters/radians
 
 
-# Slot along the south wall, two cells (6 m) long, flanked by obstacles on both ends.
-_south_slot = ParkingSpec(
-    slot_cells=[(9, 0), (10, 0)],
-    wall_cells=[(8, 0), (11, 0)],
-    goal_pose=(CELL * 10.0, CELL * 0.5, 0.0),  # center of the slot, facing East
+_BLOCK_COLS = range(GRID - 6, GRID)        # columns 6..11
+_TOP_ROW = [(c, 1) for c in _BLOCK_COLS]
+
+
+def _box(c0, c1):
+    """Green-rectangle extents read from Fig. 5, in cell units (x: c0..c1, y: 0.26..0.76)."""
+    return (c0 * CELL, 0.26 * CELL, c1 * CELL, 0.76 * CELL)
+
+
+# Fig. 5a (robot / car): walls | walls | FREE FREE | walls | walls along the bottom row;
+# green box spans ~1.4 cells centered on the boundary between the two free cells.
+_car_slot = ParkingSpec(
+    slot_cells=_TOP_ROW + [(8, 0), (9, 0)],
+    wall_cells=[(6, 0), (7, 0), (10, 0), (11, 0)],
+    goal_box=_box(8.29 - 0.0, 9.71),
+    goal_pose=(CELL * 9.0, CELL * 0.5, 0.0),
+)
+
+# Fig. 5b (truck + trailer): 4 free cells then 2 wall cells at the east end; the green
+# box spans ~2.4 cells starting a third of a way into the 2nd free cell.
+_truck_slot = ParkingSpec(
+    slot_cells=_TOP_ROW + [(6, 0), (7, 0), (8, 0), (9, 0)],
+    wall_cells=[(10, 0), (11, 0)],
+    goal_box=_box(7.29, 9.71),
+    goal_pose=(CELL * 8.5, CELL * 0.5, 0.0),
 )
 
 PARKING_SPECS = {
-    "robot": _south_slot,
-    "car": _south_slot,
-    "truck": _south_slot,  # TODO: use the Figure 5b configuration for truck + trailer
+    "robot": _car_slot,
+    "car": _car_slot,
+    "truck": _truck_slot,
 }
 
 
@@ -144,9 +169,8 @@ def plot_lot(lot, ax=None, show_goal=True):
     for (x0, y0, x1, y1) in lot.obstacle_rects():
         ax.add_patch(Rectangle((x0, y0), CELL, CELL, color="k"))
     if show_goal:
-        for ix, iy in lot.spec.slot_cells:
-            ax.add_patch(Rectangle((ix * CELL, iy * CELL), CELL, CELL,
-                                   fill=False, ec="green", lw=2))
+        x0, y0, x1, y1 = lot.spec.goal_box
+        ax.add_patch(Rectangle((x0, y0), x1 - x0, y1 - y0, fill=False, ec="green", lw=2))
         gx, gy, _ = lot.spec.goal_pose
         ax.plot(gx, gy, "g*", ms=12)
     sx, sy, _ = lot.start_pose()
