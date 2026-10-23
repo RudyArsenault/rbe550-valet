@@ -81,8 +81,8 @@ _car_slot = ParkingSpec(
 _truck_slot = ParkingSpec(
     slot_cells=_TOP_ROW + [(6, 0), (7, 0), (8, 0), (9, 0)],
     wall_cells=[(10, 0), (11, 0)],
-    goal_box=_box(7.29, 9.71),
-    goal_pose=(CELL * 8.5, CELL * 0.5, 0.0),
+    goal_box=_box(6.1, 9.9),                   # whole rig must fit in the 4-cell free run
+    goal_pose=(CELL * 8.0, CELL * 0.5, 0.0),   # center of the free run (x = 24 m)
 )
 
 PARKING_SPECS = {
@@ -107,9 +107,9 @@ class ParkingLot:
             rects.append((ix * CELL, iy * CELL, (ix + 1) * CELL, (iy + 1) * CELL))
         return rects
 
-    def start_pose(self, heading=-np.pi / 2):
-        """Pose near the NW cell center. Default heading faces South, down the west wall;
-        pass heading=0 to face East. Adjust to taste."""
+    def start_pose(self, heading=0.0):
+        """Pose at the NW cell center, facing East so a car-sized vehicle sits inside the
+        two guaranteed-free start cells (the cell and its eastern neighbor)."""
         ix, iy = self.start_cell
         return ((ix + 0.5) * CELL, (iy + 0.5) * CELL, heading)
 
@@ -117,9 +117,18 @@ class ParkingLot:
         return self.spec.goal_pose
 
 
+# Start cells kept free. The spec says "the two coincident cells" (6 m), which fits the
+# robot and the 5.2 m car; the truck + trailer rig is ~11.65 m long, so it needs 4 cells.
+START_CELLS = {
+    "robot": [(0, GRID - 1), (1, GRID - 1)],
+    "car": [(0, GRID - 1), (1, GRID - 1)],
+    "truck": [(0, GRID - 1), (1, GRID - 1), (2, GRID - 1), (3, GRID - 1)],
+}
+
+
 def _free_cells(vehicle):
     spec = PARKING_SPECS[vehicle]
-    keep = {(0, GRID - 1), (1, GRID - 1)}  # start cell and its eastern neighbor
+    keep = set(START_CELLS[vehicle])
     keep.update(map(tuple, spec.slot_cells))
     return keep
 
@@ -153,7 +162,7 @@ def generate_lot(vehicle="car", density=DENSITY, seed=None, max_tries=1000):
         grid[tuple(c)] = False
     for c in spec.wall_cells:
         grid[tuple(c)] = True
-    for c in [(0, GRID - 1), (1, GRID - 1)]:
+    for c in START_CELLS[vehicle]:
         grid[c] = False
     return ParkingLot(grid=grid, spec=spec, seed=seed)
 
