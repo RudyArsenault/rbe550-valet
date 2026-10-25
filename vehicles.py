@@ -168,7 +168,7 @@ def make_vehicle(kind):
 
 
 if __name__ == "__main__":
-    # check: car drives a circle of radius L / tan(phi).
+    #check: car drives a circle of radius L / tan(phi).
     car = Car()
     s = np.array([0.0, 0.0, 0.0])
     phi = np.deg2rad(20)
