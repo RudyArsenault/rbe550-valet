@@ -1,14 +1,5 @@
-"""animate.py - Path animations for RBE-550 Assignment 4 (VALET).
+#animate.py 
 
-For each vehicle (robot, car, truck + trailer) this plans one run and saves:
-  * <vehicle>_snapshots.png - periodic footprint snapshots superimposed on the lot
-  * <vehicle>.gif           - a short animation of the vehicle driving start -> parked
-GIFs are written with Pillow (already installed), so no ffmpeg is needed.
-
-Usage:
-    python animate.py                 # all three vehicles, default seeds
-    python animate.py car 3           # one vehicle, a specific lot seed
-"""
 import sys
 
 import numpy as np

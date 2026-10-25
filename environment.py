@@ -1,7 +1,6 @@
 """environment.py
 
 Coordinate convention
----------------------
 World frame: x points East, y points North, units are meters.
 The lot is GRID x GRID cells, each CELL meters square (12 x 12 cells, 3 m -> 36 m x 36 m).
 Grid indexing: grid[ix, iy] with ix = column (0 = West) and iy = row counted from the
@@ -9,7 +8,6 @@ SOUTH (0 = South edge). Cell (ix, iy) covers x in [ix*CELL, (ix+1)*CELL] and
 y in [iy*CELL, (iy+1)*CELL].
 
 Start is the Northwest corner (ix=0, iy=GRID-1); parking is in the Southeast corner.
-
 """
 from dataclasses import dataclass, field
 import numpy as np

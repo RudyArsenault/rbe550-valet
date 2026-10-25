@@ -27,8 +27,8 @@ def _project(poly, axis):
 def sat_overlap(poly_a, poly_b, eps=1e-9):
     #true if two convex polygons (Nx2 arrays) overlap 
 
-   # Returns (overlap, axis_of_min_penetration) - the second item is None when they are
-   # separated, otherwise the axis with the smallest overlap (used for the diagrams)
+   # Returns (overlap, axis_of_min_penetration) - the second item is None when they are separated
+   # #otherwise the axis with the smallest overlap 
     best = None
     for poly in (poly_a, poly_b):
         n = len(poly)

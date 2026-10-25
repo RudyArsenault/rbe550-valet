@@ -296,7 +296,7 @@ class HybridAStar:
         dirs = np.concatenate(dsegs[::-1])
         return path, dirs
 
-    # main entyr
+    # main entry
     def plan(self, start, goals, tol=(0.5, 0.5, 0.15)):
         """start: (x, y, th) reference pose. goals: list of acceptable (x, y, th) poses.
         Returns PlanResult (never raises for an unsolvable lot)."""

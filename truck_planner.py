@@ -19,7 +19,7 @@ Goal (Figure 5b, boundary at our discretion per Sec. 3.2): rig parked along the 
 wall facing East, nose within ~1.5 m of the east wall, cab and trailer axles in the
 bottom row (y in [1.0, 2.0] m), truck and trailer both within 8 deg of East.
 
-AI-assisted code (Claude, Anthropic).
+AI-assisted code
 """
 import heapq
 import math
