@@ -1,6 +1,6 @@
-"""planner.py - Hybrid A* for RBE-550 Assignment 4 (VALET).
+"""planner.py 
 
-Hybrid A* (Dolgov et al., 2008) searches a discretized (x, y, theta) grid, but every node
+Hybrid A* searches a discretized (x, y, theta) grid, but every node
 stores the CONTINUOUS pose reached by driving a kinematically feasible motion primitive,
 so the final path is drivable. Pieces:
 
@@ -18,7 +18,7 @@ so the final path is drivable. Pieces:
 If no path exists the planner returns a PlanResult with success=False and a reason,
 instead of raising - the assignment requires graceful failure.
 
-AI-assisted code (Claude, Anthropic).
+AI-assisted code
 """
 import heapq
 import math
@@ -32,9 +32,8 @@ from reeds_shepp import rs_paths, sample_path, mod2pi
 from vehicles import Car, DiffDriveRobot
 
 
-# ---------------------------------------------------------------------------
-# Configuration and result types
-# ---------------------------------------------------------------------------
+
+#configuration and result types
 @dataclass
 class PlannerConfig:
     xy_res: float = 1.0          # m, search grid resolution
@@ -65,11 +64,10 @@ class PlanResult:
     cost: float = float("inf")
 
 
-# ---------------------------------------------------------------------------
-# Vehicle adapters: footprint geometry, primitives, and goal conversion
-# ---------------------------------------------------------------------------
+
+#vehicle adapters: footprint geometry, primitives, and goal conversion
+
 class _Model:
-    """Common geometry for a single-box vehicle whose reference point is (x, y)."""
 
     def __init__(self, back, front, width):
         self.back, self.front, self.hw = back, front, width / 2.0
@@ -85,7 +83,7 @@ class _Model:
         self.center_offset = (front - back) / 2.0   # box center ahead of the ref point
 
     def ref_from_center(self, cx, cy, th):
-        """Reference-point pose that puts the box center at (cx, cy)."""
+        
         return (cx - self.center_offset * math.cos(th),
                 cy - self.center_offset * math.sin(th), th)
 
@@ -96,7 +94,7 @@ class CarModel(_Model):
         self.L = car.wheelbase
         self.rs_radius = car.wheelbase / math.tan(car.phi_max)
         steers = np.linspace(-car.phi_max, car.phi_max, cfg.n_steer)
-        # primitive = (direction, curvature, steer normalized to [-1, 1], in_place)
+        #primitive = (direction, curvature, steer normalized to [-1, 1], in_place)
         self.prims = [(d, math.tan(p) / self.L, p / car.phi_max, False)
                       for d in (1, -1) for p in steers]
 
@@ -107,7 +105,7 @@ class RobotModel(_Model):
         self.rs_radius = 0.75
         ks = [-1 / 0.75, -1 / 2.0, 0.0, 1 / 2.0, 1 / 0.75]
         self.prims = [(d, k, k * 0.75, False) for d in (1, -1) for k in ks]
-        # turn in place by +/- 45 degrees (direction 0 = no translation)
+        #turn in place by +/- 45 degrees (direction 0 = no translation)
         self.prims += [(0, s * math.pi / 4, 0.0, True) for s in (1, -1)]
 
 
@@ -116,7 +114,7 @@ def make_model(vehicle, cfg):
         return CarModel(vehicle, cfg)
     if isinstance(vehicle, DiffDriveRobot):
         return RobotModel(vehicle, cfg)
-    raise NotImplementedError("truck + trailer planner comes next")
+    raise NotImplementedError("truck + trailer planner next")
 
 
 def propagate(state, prim, step, ds):
@@ -137,9 +135,9 @@ def propagate(state, prim, step, ds):
                      y - (np.cos(a) - math.cos(th)) / k, a], axis=1)
 
 
-# ---------------------------------------------------------------------------
+
 # Fast vectorized collision test used inside the search
-# ---------------------------------------------------------------------------
+
 class FastCollision:
     def __init__(self, lot, model):
         self.grid = lot.grid
@@ -175,9 +173,9 @@ class FastCollision:
         return False
 
 
-# ---------------------------------------------------------------------------
+
 # Heuristic: obstacle-aware 2D distance-to-goal (Dijkstra, 8-connected)
-# ---------------------------------------------------------------------------
+
 def holonomic_heuristic(lot, goal_xy, res=0.5):
     n = int(round(SIZE / res))
     sub = int(round(CELL / res))
@@ -203,9 +201,9 @@ def holonomic_heuristic(lot, goal_xy, res=0.5):
     return dist, res
 
 
-# ---------------------------------------------------------------------------
+
 # Hybrid A*
-# ---------------------------------------------------------------------------
+
 @dataclass(order=True)
 class _Node:
     f: float
@@ -225,7 +223,7 @@ class HybridAStar:
         self.model = make_model(vehicle, self.cfg)
         self.coll = FastCollision(lot, self.model)
 
-    # --- helpers ---------------------------------------------------------
+    #helpers
     def _key(self, s):
         c = self.cfg
         return (int(s[0] // c.xy_res), int(s[1] // c.xy_res),
@@ -240,7 +238,7 @@ class HybridAStar:
         c = self.cfg
         d, k, steer, in_place = prim
         if in_place:
-            return 1.0 * abs(k)                 # ~1 m-equivalent per radian
+            return 1.0 * abs(k)                
         cost = c.step * (1.0 if d > 0 else c.reverse_cost)
         cost += c.step * c.steer_cost * abs(steer)
         cost += c.steer_change_cost * abs(steer - parent.steer)
@@ -272,7 +270,7 @@ class HybridAStar:
                 pts, dirs = sample_path(node.state, L, T, self.model.rs_radius,
                                         self.cfg.sample_ds)
                 if not self.coll.hits(pts):
-                    best = (pts[1:], dirs[1:], cost)   # keep the cheapest (not shortest)
+                    best = (pts[1:], dirs[1:], cost)   # keep the cheapest
         return best
 
     def _at_goal(self, s):
@@ -298,7 +296,7 @@ class HybridAStar:
         dirs = np.concatenate(dsegs[::-1])
         return path, dirs
 
-    # --- main entry ------------------------------------------------------
+    # main entyr
     def plan(self, start, goals, tol=(0.5, 0.5, 0.15)):
         """start: (x, y, th) reference pose. goals: list of acceptable (x, y, th) poses.
         Returns PlanResult (never raises for an unsolvable lot)."""
@@ -374,9 +372,8 @@ class HybridAStar:
                           expansions=expansions, time=time.time() - t0)
 
 
-# ---------------------------------------------------------------------------
-# Parallel-parking maneuver, planned BACKWARDS ("unparking")
-# ---------------------------------------------------------------------------
+
+#parallel-parking maneuver, planned BACKWARDS ("unparking")
 def unpark(coll, model, parked, k_max, max_moves=20, exit_len=4.0, ds=0.05, margin=0.10,
            side=None):
     """Shuffle out of a tight slot: alternate forward / reverse at full lock (steering
@@ -424,13 +421,8 @@ def _reverse_maneuver(poses, dirs):
     return poses[::-1][1:], -dirs[1:][::-1]
 
 
-# ---------------------------------------------------------------------------
-# Convenience: plan a vehicle on a lot from the NW start to the SE slot
-# ---------------------------------------------------------------------------
+#convenience: plan a vehicle on a lot from the NW start to the SE slot
 def plan_vehicle(lot, vehicle, cfg=None, both_directions=True):
-    """Start at the NW corner facing East, park in the SE slot (either heading if
-    both_directions). Car: Hybrid A* to the exit pose of the unpark maneuver, then the
-    maneuver replayed backwards. Robot: Hybrid A* straight to the slot."""
     planner = HybridAStar(lot, vehicle, cfg)
     m = planner.model
     sx, sy, _ = lot.start_pose()
@@ -455,8 +447,7 @@ def plan_vehicle(lot, vehicle, cfg=None, both_directions=True):
     maneuvers.sort(key=lambda mm: mm[2])          # fewest shuffles first
     exits = [tuple(mm[0][-1]) for mm in maneuvers]
 
-    # The start cells are 6 m long for a 5.2 m car: if an obstacle sits right next to
-    # them, no full-length primitive fits, so shuffle out of the start pocket first.
+    # The start cells are 6 m long for a 5.2 m car: if an obstacle sits right next to them, no full-length primitive fits, so shuffle out of the start pocket first
     head_p, head_d, escape_note = None, None, ""
     free_children = sum(not planner.coll.hits(propagate(start, pr, planner.cfg.step,
                                                         planner.cfg.sample_ds))

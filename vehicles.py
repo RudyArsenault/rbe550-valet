@@ -1,4 +1,4 @@
-"""vehicles.py - Kinematic models for RBE-550 Assignment 4 (VALET).
+"""vehicles.py
 
 All vehicles share the same interface:
     state  : tuple/array, vehicle-specific (see each class)
@@ -6,7 +6,7 @@ All vehicles share the same interface:
     footprints(state) -> list of 4x2 arrays   (oriented bounding-box corners, for
                                                collision checking and plotting)
 
-Models (Figures 6, 7 and 9 of the assignment):
+Models 
   DiffDriveRobot : state (x, y, th),            control (v, omega)
   Car            : state (x, y, th),            control (v, phi)   (Ackermann, bicycle model,
                                                  (x, y) is the REAR AXLE center)
@@ -18,17 +18,12 @@ import numpy as np
 
 
 def wrap(a):
-    """Wrap angle(s) to [-pi, pi)."""
     return (a + np.pi) % (2 * np.pi) - np.pi
 
 
 def box_corners(x, y, th, length, width, back, front=None):
-    """Corners of a rectangle whose reference point is (x, y), heading th.
+    #Corners of a rectangle whose reference point is (x, y), heading th
 
-    `back`  = distance from the reference point to the rear edge,
-    `front` = distance to the front edge (default: length - back).
-    Corner order: rear-left, rear-right, front-right, front-left (CCW).
-    """
     if front is None:
         front = length - back
     c, s = np.cos(th), np.sin(th)
@@ -47,9 +42,9 @@ def rk4(f, state, control, dt):
     return s + dt / 6.0 * (k1 + 2 * k2 + 2 * k3 + k4)
 
 
-# ---------------------------------------------------------------------------
-# Delivery robot: differential drive (skid steer treated as diff drive)
-# ---------------------------------------------------------------------------
+
+#robot: differential drive 
+
 @dataclass
 class DiffDriveRobot:
     length: float = 0.70
@@ -75,9 +70,9 @@ class DiffDriveRobot:
         return [box_corners(x, y, th, self.length, self.width, back=self.length / 2)]
 
 
-# ---------------------------------------------------------------------------
-# Car: Ackermann steering, kinematic bicycle model referenced to the rear axle
-# ---------------------------------------------------------------------------
+
+#car: Ackermann steering, kinematic bicycle model referenced to the rear axle
+
 @dataclass
 class Car:
     length: float = 5.2
@@ -112,12 +107,12 @@ class Car:
         return [box_corners(x, y, th, self.length, self.width, back=self.rear_overhang)]
 
 
-# ---------------------------------------------------------------------------
-# Truck with one trailer (Figure 9). Hitch is at the truck's rear axle center (x, y).
-# th0 = truck heading, th1 = trailer heading. d1 = hitch -> trailer axle center.
+
+#truck with one trailer, Hitch is at the truck's rear axle center (x, y)
+#th0 = truck heading, th1 = trailer heading d1 = hitch -> trailer axle center.
 #   th0' = v/L * tan(phi)
 #   th1' = v/d1 * sin(th0 - th1)
-# ---------------------------------------------------------------------------
+
 @dataclass
 class TruckTrailer:
     length: float = 5.4
@@ -128,7 +123,7 @@ class TruckTrailer:
     d1: float = 5.0
     phi_max: float = np.deg2rad(30.0)
     v_max: float = 2.0
-    hitch_angle_max: float = np.deg2rad(70.0)   # jackknife limit |th0 - th1|
+    hitch_angle_max: float = np.deg2rad(70.0)   #jackknife limit |th0 - th1|
     name: str = "truck"
 
     @property
@@ -159,8 +154,7 @@ class TruckTrailer:
         return np.array([x - self.d1 * np.cos(th1), y - self.d1 * np.sin(th1)])
 
     def footprints(self, state):
-        """[truck box, trailer box]. Trailer box is centered on its axle (spec: axle at the
-        midpoint of the trailer)."""
+  
         x, y, th0, th1 = state
         truck = box_corners(x, y, th0, self.length, self.width, back=self.rear_overhang)
         ax, ay = self.trailer_axle(state)
@@ -174,7 +168,7 @@ def make_vehicle(kind):
 
 
 if __name__ == "__main__":
-    # Quick sanity check: car drives a circle of radius L / tan(phi).
+    # check: car drives a circle of radius L / tan(phi).
     car = Car()
     s = np.array([0.0, 0.0, 0.0])
     phi = np.deg2rad(20)
