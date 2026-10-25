@@ -9,7 +9,7 @@ forwards and backwards", in the normalized form used by OMPL and PythonRobotics
 Every candidate is VERIFIED by integrating it and checking it lands on the goal pose,
 so a mis-derived family can only cost an option, never return a wrong path.
 
-AI-assisted code (Claude, Anthropic), adapted from the published formulas above.
+AI-assisted code adapted from the published formulas above.
 """
 import math
 import numpy as np
